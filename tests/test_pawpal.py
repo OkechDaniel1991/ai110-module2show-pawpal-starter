@@ -44,6 +44,36 @@ def test_scheduler_sorts_tasks_by_time() -> None:
     assert scheduler.sort_by_time() == [early_task, late_task]
 
 
+def test_scheduler_sorts_tasks_without_times_last() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever")
+    untimed_task = Task("Brush coat", 15, "weekly")
+    morning_task = Task("Breakfast", 10, "daily", scheduled_time=time(8, 0))
+    evening_task = Task("Dinner", 10, "daily", scheduled_time=time(18, 0))
+
+    pet.add_task(untimed_task)
+    pet.add_task(evening_task)
+    pet.add_task(morning_task)
+    owner.add_pet(pet)
+
+    scheduler = Scheduler(owner)
+
+    assert scheduler.sort_by_time() == [morning_task, evening_task, untimed_task]
+
+
+def test_scheduler_handles_pet_with_no_tasks() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever")
+    owner.add_pet(pet)
+
+    scheduler = Scheduler(owner)
+
+    assert scheduler.get_all_tasks() == []
+    assert scheduler.get_pending_tasks() == []
+    assert scheduler.sort_by_time() == []
+    assert scheduler.detect_conflicts() == []
+
+
 def test_scheduler_filters_tasks_by_status_and_pet_name() -> None:
     owner = Owner(name="Jordan")
     mochi = Pet(name="Mochi", species="Dog", breed="Golden Retriever")
@@ -98,6 +128,22 @@ def test_weekly_task_completion_creates_next_weekly_task() -> None:
     assert next_task.due_date == completed_on + timedelta(days=7)
 
 
+def test_non_recurring_task_completion_does_not_create_next_task() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Luna", species="Cat", breed="Tabby")
+    task = Task("One-time vet visit", 60, "once", scheduled_time=time(14, 0))
+
+    pet.add_task(task)
+    owner.add_pet(pet)
+
+    scheduler = Scheduler(owner)
+    next_task = scheduler.mark_task_complete(task, completed_on=date(2026, 7, 15))
+
+    assert task.is_complete()
+    assert next_task is None
+    assert pet.get_tasks() == [task]
+
+
 def test_scheduler_detects_tasks_at_same_time() -> None:
     owner = Owner(name="Jordan")
     mochi = Pet(name="Mochi", species="Dog", breed="Golden Retriever")
@@ -129,3 +175,28 @@ def test_scheduler_returns_no_conflict_warnings_for_unique_times() -> None:
     scheduler = Scheduler(owner)
 
     assert scheduler.detect_conflicts() == []
+
+
+def test_scheduler_ignores_completed_tasks_when_detecting_conflicts() -> None:
+    owner = Owner(name="Jordan")
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever")
+    completed_task = Task(
+        "Morning walk",
+        30,
+        "daily",
+        scheduled_time=time(8, 0),
+        completed=True,
+    )
+    pending_task = Task("Breakfast", 10, "daily", scheduled_time=time(8, 0))
+
+    pet.add_task(completed_task)
+    pet.add_task(pending_task)
+    owner.add_pet(pet)
+
+    scheduler = Scheduler(owner)
+
+    assert scheduler.detect_conflicts() == []
+    assert scheduler.detect_conflicts(include_completed=True) == [
+        "Warning: 2 tasks are scheduled at 8:00 AM: "
+        "Mochi: Morning walk, Mochi: Breakfast."
+    ]

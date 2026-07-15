@@ -54,21 +54,37 @@ Today's Schedule
 6:30 PM - Mochi: Evening medication (5 min, daily)
 ```
 
-## 🧪 Testing PawPal+
+## Testing PawPal+
 
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+The automated tests verify the core PawPal+ system behaviors: task completion status, adding tasks to pets, sorting scheduled tasks in chronological order, handling tasks without scheduled times, filtering by pet and completion status, recurring daily and weekly tasks, non-recurring task behavior, conflict detection for duplicate times, and empty schedules for pets with no tasks.
+
+Successful test run:
 
 ```
-# Paste your pytest output here
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\danie\Downloads\Project PawPal+\ai110-module2show-pawpal-starter
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.14.2
+collected 12 items
+
+tests\test_pawpal.py ............                                        [100%]
+
+============================== warnings summary ===============================
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\cacheprovider.py:469
+  C:\Users\danie\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\cacheprovider.py:469: PytestCacheWarning: could not create cache path C:\Users\danie\Downloads\Project PawPal+\ai110-module2show-pawpal-starter\.pytest_cache\v\cache\nodeids: [WinError 5] Access is denied: 'C:\\Users\\danie\\Downloads\\Project PawPal+\\ai110-module2show-pawpal-starter\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 12 passed, 1 warning in 0.04s ========================
 ```
+
+Confidence Level: ★★★★☆ (4/5). The core scheduling logic is reliable based on the passing automated tests, with the remaining risk being that the suite focuses on system logic rather than full Streamlit UI behavior.
 
 ## 📐 Smarter Scheduling
 
