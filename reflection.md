@@ -39,6 +39,10 @@ The reason is that this will avoid keeping two separate lists in sync.
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+Response: One completed algorithmic method I reviewed was `Scheduler.detect_conflicts()`. The method loops through each pet's tasks, groups tasks by `scheduled_time`, and returns a warning if more than one pending task shares the same time. This could be written in a more compact way using nested list comprehensions or `defaultdict`, but the current version is easier to read because each step is explicit: skip unscheduled tasks, skip completed tasks, group by time, then build warning messages. I would keep the current version because this project is small and readability matters more than saving a few lines.
+
+The main scheduling tradeoff is that conflict detection only checks for exact time matches. For example, an 8:00 AM walk and an 8:15 AM grooming task would not be flagged, even if the walk lasts 30 minutes. A more advanced scheduler would compare start and end times using each task's duration. The current approach is still reasonable for PawPal+ because it is lightweight, easy to explain, and gives pet owners a helpful first warning without making the scheduling logic too complex.
+
 ---
 
 ## 3. AI Collaboration
