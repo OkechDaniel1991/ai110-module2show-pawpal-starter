@@ -1,55 +1,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, time
-from enum import Enum
+from datetime import time
 from typing import Optional
 
 
-class Priority(Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-
-class Recurrence(Enum):
-    ONCE = "once"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-
-
 @dataclass
-class TimeWindow:
-    start: time
-    end: time
+class Task:
+    description: str
+    duration_minutes: int
+    frequency: str
+    scheduled_time: Optional[time] = None
+    completed: bool = False
 
-    def duration_minutes(self) -> int:
-        pass
+    def mark_complete(self) -> None:
+        """Mark this task as completed."""
+        self.completed = True
 
-    def contains(self, t: time) -> bool:
-        pass
+    def mark_incomplete(self) -> None:
+        """Mark this task as not completed."""
+        self.completed = False
 
-    def overlaps(self, other: TimeWindow) -> bool:
-        pass
-
-
-@dataclass
-class Owner:
-    name: str
-    availability: TimeWindow
-    pets: list[Pet] = field(default_factory=list)
-
-    def add_pet(self, pet: Pet) -> None:
-        pass
-
-    def remove_pet(self, pet: Pet) -> None:
-        pass
-
-    def all_tasks(self) -> list[Task]:
-        pass
-
-    def available_minutes(self) -> int:
-        pass
+    def is_complete(self) -> bool:
+        """Return whether this task is completed."""
+        return self.completed
 
 
 @dataclass
@@ -60,81 +34,79 @@ class Pet:
     tasks: list[Task] = field(default_factory=list)
 
     def add_task(self, task: Task) -> None:
-        pass
+        """Add a task to this pet."""
+        self.tasks.append(task)
 
     def remove_task(self, task: Task) -> None:
-        pass
+        """Remove a task from this pet if it exists."""
+        if task in self.tasks:
+            self.tasks.remove(task)
+
+    def get_tasks(self) -> list[Task]:
+        """Return this pet's tasks."""
+        return self.tasks
 
 
 @dataclass
-class Task:
+class Owner:
     name: str
-    duration_minutes: int
-    priority: Priority
-    category: str
-    recurrence: Recurrence
-    weekdays: set[int] = field(default_factory=set)
-    fixed_time: Optional[time] = None
+    pets: list[Pet] = field(default_factory=list)
 
-    def is_fixed(self) -> bool:
-        pass
+    def add_pet(self, pet: Pet) -> None:
+        """Add a pet to this owner."""
+        self.pets.append(pet)
 
-    def occurs_on(self, day: date) -> bool:
-        pass
+    def remove_pet(self, pet: Pet) -> None:
+        """Remove a pet from this owner if it exists."""
+        if pet in self.pets:
+            self.pets.remove(pet)
 
+    def get_pets(self) -> list[Pet]:
+        """Return this owner's pets."""
+        return self.pets
 
-@dataclass
-class ScheduledTask:
-    task: Task
-    slot: TimeWindow
-
-    def overlaps(self, other: ScheduledTask) -> bool:
-        pass
-
-    def label(self) -> str:
-        pass
-
-
-@dataclass
-class Plan:
-    day: date
-    scheduled: list[ScheduledTask] = field(default_factory=list)
-    skipped: list[Task] = field(default_factory=list)
-    reasons: list[str] = field(default_factory=list)
-
-    def add_scheduled(self, st: ScheduledTask) -> None:
-        pass
-
-    def add_skipped(self, task: Task, reason: str) -> None:
-        pass
-
-    def total_minutes(self) -> int:
-        pass
-
-    def is_empty(self) -> bool:
-        pass
-
-    def explain(self) -> str:
-        pass
+    def all_tasks(self) -> list[Task]:
+        """Return every task from all of this owner's pets."""
+        tasks: list[Task] = []
+        for pet in self.pets:
+            tasks.extend(pet.get_tasks())
+        return tasks
 
 
 @dataclass
 class Scheduler:
-    day_bounds: TimeWindow
+    owner: Owner
 
-    def generate_plan(self, owner: Owner, day: date) -> Plan:
-        pass
+    def get_all_tasks(self) -> list[Task]:
+        """Return every task managed by the scheduler's owner."""
+        return self.owner.all_tasks()
 
-    def filter_due(self, tasks: list[Task], day: date) -> list[Task]:
-        pass
+    def get_pending_tasks(self) -> list[Task]:
+        """Return all tasks that are not completed."""
+        return [task for task in self.get_all_tasks() if not task.is_complete()]
 
-    def sort_tasks(self, tasks: list[Task]) -> list[Task]:
-        pass
+    def get_completed_tasks(self) -> list[Task]:
+        """Return all tasks that are completed."""
+        return [task for task in self.get_all_tasks() if task.is_complete()]
 
-    def place_task(
-        self, task: Task, taken: list[ScheduledTask]
-    ) -> Optional[ScheduledTask]:
-        pass
+    def organize_tasks_by_pet(self) -> dict[str, list[Task]]:
+        """Group tasks by pet name."""
+        return {pet.name: pet.get_tasks() for pet in self.owner.get_pets()}
 
-    def detect_conflict(self, a: ScheduledTask, b: ScheduledTask) -> bool:
-        pass
+    def organize_tasks_by_frequency(self) -> dict[str, list[Task]]:
+        """Group tasks by frequency."""
+        tasks_by_frequency: dict[str, list[Task]] = {}
+        for task in self.get_all_tasks():
+            tasks_by_frequency.setdefault(task.frequency, []).append(task)
+        return tasks_by_frequency
+
+    def sort_tasks_by_time(self) -> list[Task]:
+        """Return all tasks sorted by scheduled time."""
+        return sorted(
+            self.get_all_tasks(),
+            key=lambda task: task.scheduled_time or time.max,
+        )
+
+    def mark_task_complete(self, task: Task) -> None:
+        """Mark a managed task as completed."""
+        task.mark_complete()
